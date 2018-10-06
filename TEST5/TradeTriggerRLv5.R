@@ -36,21 +36,21 @@ library(magrittr)
 # Used Functions (to make code more compact). See detail of each function in the repository
 #-----------------
 # *** make sure to customize this path
- source("C:/Users/fxtrams/Documents/000_TradingRepo/R_tradecontrol/writeCommandViaCSV.R")
- source("C:/Users/fxtrams/Documents/000_TradingRepo/R_tradecontrol/TEST5/apply_policy.R")
- source("C:/Users/fxtrams/Documents/000_TradingRepo/R_tradecontrol/TEST5/data_4_RL.R")
- source("C:/Users/fxtrams/Documents/000_TradingRepo/R_tradecontrol/import_data.R")
- source("C:/Users/fxtrams/Documents/000_TradingRepo/R_tradecontrol/TEST5/import_data_mt.R")
- source("C:/Users/fxtrams/Documents/000_TradingRepo/R_tradecontrol/TEST5/generate_RL_policy.R")
- source("C:/Users/fxtrams/Documents/000_TradingRepo/R_tradecontrol/TEST5/record_policy.R")
+ source("D:/TradingRepos/R_tradecontrol/writeCommandViaCSV.R")
+ source("D:/TradingRepos/R_tradecontrol/TEST5/apply_policy.R")
+ source("D:/TradingRepos/R_tradecontrol/TEST5/data_4_RL.R")
+ source("D:/TradingRepos/R_tradecontrol/import_data.R")
+ source("D:/TradingRepos/R_tradecontrol/TEST5/import_data_mt.R")
+ source("D:/TradingRepos/R_tradecontrol/TEST5/generate_RL_policy.R")
+ source("D:/TradingRepos/R_tradecontrol/TEST5/record_policy.R")
 # -------------------------
 # Define terminals path addresses, from where we are going to read/write data
 # -------------------------
 # terminal 1 path *** make sure to customize this path
-path_T1 <- "C:/Program Files (x86)/FxPro - Terminal1/MQL4/Files/"
+path_T1 <- "D:/FxPro - Terminal1/MQL4/Files/"
 
 # terminal 3 path *** make sure to customize this path
-path_T4 <- "C:/Program Files (x86)/FxPro - Terminal3/MQL4/Files/"
+path_T4 <- "D:/FxPro - Terminal3/MQL4/Files/"
 
 # -------------------------
 # read data from trades in terminal 1

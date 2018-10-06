@@ -16,7 +16,7 @@
 #'
 #' @examples
 import_data_mt <- function(path_terminal, system_number){
-  # path_terminal <- "C:/Program Files (x86)/FxPro - Terminal1/MQL4/Files/"
+  # path_terminal <- "D:/FxPro - Terminal1/MQL4/Files/"
   # system_number <- 8139124
   require(tidyverse)
   trade_log_file <- paste0("MarketTypeLog", system_number, ".csv")
