@@ -75,7 +75,7 @@ for (i in 1:length(vector_systems)) {
   # tryCatch() function will not abort the entire for loop in case of the error in one iteration
   tryCatch({
     # execute this code below for debugging:
-    # i <- 2
+    # i <- 1
     
   # extract current magic number id
   trading_system <- vector_systems[i]
