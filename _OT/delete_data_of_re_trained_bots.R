@@ -29,8 +29,8 @@ DFT1 <- try(import_data(path_T1, "OrdersResultsT1.csv"), silent = TRUE)
 DFT_x <- DFT1 %>%  # filtered to contain last 20 orders for each system
       group_by(MagicNumber) %>% 
       arrange(MagicNumber, desc(OrderCloseTime)) %>% 
-      filter(row_number() <= 21) %>% 
-      get_profit_factorDF(20) %>% 
+      filter(row_number() <= 8) %>% 
+      get_profit_factorDF(7) %>% 
       ungroup() %>% 
       filter(PrFact < 1) %>% 
       select(MagicNumber, PrFact) %>% 

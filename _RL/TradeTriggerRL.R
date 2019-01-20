@@ -158,16 +158,13 @@ if(file.exists(file.path(path_T1, "01_MacroeconomicEvent.csv"))){
   # enable systems of T1 in case they were disabled previously
   if(DF_NT[1,1] == 0) {
     # enable trades
-    if(nrow(DFT1) < 50){
+    
       read_csv("D:/TradingRepos/FALCON_A/TEST/Setup.csv") %>%
         group_by(Magic) %>% select(Magic) %>% mutate(IsEnabled = 1) %>% 
         # write commands to disable systems
         writeCommandViaCSV(path_T1)}
-    if(!class(DFT1)[1]=='try-error'){
-      DFT1 %>%
-        group_by(MagicNumber) %>% select(MagicNumber) %>% mutate(IsEnabled = 1) %>% 
-        # write commands to disable systems
-        writeCommandViaCSV(path_T1)}
+    
+        
 
     
   }
