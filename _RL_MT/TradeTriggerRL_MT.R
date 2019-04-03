@@ -1,15 +1,21 @@
 # This is a dedicated script for the Lazy Trading 4th Course: Statistical Analysis and Control of Trades
 # This is a dedicated script for the Lazy Trading 6th Course: Detect Market Type with Artificial Intelligence
-# Copyright (C) 2018 Vladimir Zhbanko
+# Copyright (C) 2019 Vladimir Zhbanko
 # Preferrably to be used only with the courses Lazy Trading see: https://vladdsm.github.io/myblog_attempt/index.html
 # https://www.udemy.com/your-trading-control-reinforcement-learning/?couponCode=LAZYTRADE4-10
+# https://www.udemy.com/detect-market-status-with-ai/?couponCode=LAZYTRADE6-10
 # PURPOSE: Analyse trade results in Terminal 1 and Trigger or Stop Trades in Terminal 3
 # DETAILS: Trades are analysed and RL model is created for each single Expert Advisor
 #        : Q states function is calculated, whenever Action 'ON' is > than 'OFF' trade trigger will be active   
 #        : Results are written to the file of the MT4 Trading Terminal
 #        : Reinforcement Learning Models are created for each specific system considering 6 Market Types
 #        : RL would learn to select the best Market Types to switch ON/OFF Trading Systems
-
+# !!!!!!!!!!! #
+## ATTENTION ##
+# !!!!!!!!!!! #
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# THIS CODE IS NOT COMPATIBLE WITH CODE IN FOLDER _RL/TradeTriggerRL.R !!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # packages used *** make sure to install these packages
 library(tidyverse) #install.packages("tidyverse")
@@ -52,6 +58,8 @@ path_T1 <- "D:/FxPro - Terminal1/MQL4/Files/"
 # terminal 3 path *** make sure to customize this path
 path_T3 <- "D:/FxPro - Terminal3/MQL4/Files/"
 
+# path where to read control parameters from
+path_control_files = "D:/TradingRepos/R_tradecontrol/R_tradecontrol/_RL_MT/control"
 # -------------------------
 # read data from trades in terminal 1
 # -------------------------
@@ -80,18 +88,18 @@ for (i in 1:length(vector_systems)) {
   # tryCatch() function will not abort the entire for loop in case of the error in one iteration
   tryCatch({
     # execute this code below for debugging:
-    # i <- 35
+    # i <- 25
     
   # extract current magic number id
   trading_system <- vector_systems[i]
   # get trading summary data only for one system 
   trading_systemDF <- DFT1 %>% filter(MagicNumber == trading_system)
-  # try to extract market type information for that system
-  DFT1_MT <- try(import_data_mt(path_T1, trading_system), silent = TRUE)
+  # try to extract market type information for that system, filter rows where MarketType was not logged!
+  DFT1_MT <- try(import_data_mt(path_T1, trading_system), silent = TRUE) %>% filter(MarketType != -1)
   # go to the next i if there is no data
   if(class(DFT1_MT)[1]=="try-error") { next }
     # joining the data with market type info
-    trading_systemDF <- inner_join(trading_systemDF, DFT1_MT, by = "TicketNumber")
+    trading_systemDF <- inner_join(trading_systemDF, DFT1_MT, by = "TicketNumber") 
     # write this data for further debugging or tests
     # write_rds(trading_systemDF,path = "test_data/data_trades_markettype.rds")
     
@@ -111,7 +119,12 @@ for (i in 1:length(vector_systems)) {
     #control <- list(alpha = 0.5, gamma = 0.5, epsilon = 0.5)
     #control <- list(alpha = 0.9, gamma = 0.9, epsilon = 0.9)
     #control <- list(alpha = 0.8, gamma = 0.3, epsilon = 0.5)
-    control <- list(alpha = 0.3, gamma = 0.6, epsilon = 0.1) 
+    #control <- list(alpha = 0.3, gamma = 0.6, epsilon = 0.1)
+    # check existence of the file with control parameters, go to next if not exists
+    if(!file.exists(paste0(path_control_files,"/", trading_system, ".rds"))) { next }
+    # Use optimal control parameters found by auxiliary function
+    control <- read_rds(paste0(path_control_files,"/", trading_system, ".rds"))
+    #control <- read_rds(paste0(path_control_files,"/", 8118102, ".rds"))
     # -----
     #==============================================================================
     
@@ -119,6 +132,9 @@ for (i in 1:length(vector_systems)) {
     # perform reinforcement learning and return policy
     policy_tr_systDF <- generate_RL_policy(trading_systemDF, states = states,actions = actions,
                                            control = control)
+    
+    # # summarize results by Market Type
+    # trading_systemDF %>% group_by(MarketType) %>% summarise(ProfitMT = sum(Profit))
     
     # record policy to the sandbox of Terminal 3, this should be analysed by EA
     record_policy(x = policy_tr_systDF, trading_system = trading_system, path_sandbox = path_T3)
@@ -135,41 +151,50 @@ for (i in 1:length(vector_systems)) {
 
 
 
-
 ##========================================
 # -------------------------
 # stopping all systems when macroeconomic event is present
 # this will be covered in the Course #5 of the Lazy Trading Series!
 # -------------------------
 if(file.exists(file.path(path_T1, "01_MacroeconomicEvent.csv"))){
+  #read the file containing a flag (1 will mean that event is present hence no new opened orders)
   DF_NT <- read_csv(file= file.path(path_T1, "01_MacroeconomicEvent.csv"), col_types = "i")
+  #read the table of trading robots in operation
+  DF_Setup <- read_csv("D:/TradingRepos/FALCON_F2/TEST/Setup.csv")
+  
+  ## condition to disable systems
   if(DF_NT[1,1] == 1) {
-    # disable trades
-    if(!class(DFT1)[1]=='try-error'){
-      DFT1 %>%
-        group_by(MagicNumber) %>% select(MagicNumber) %>% mutate(IsEnabled = 0) %>% 
-        # write commands to disable systems
-        writeCommandViaCSV(path_T1)}
-    if(!class(DFT3)[1]=='try-error'){
-      DFT3 %>%
-        group_by(MagicNumber) %>% select(MagicNumber) %>% mutate(IsEnabled = 0) %>% 
-        writeCommandViaCSV(path_T3)}
+    # disable trades in T1
+    DF_Setup %>%
+      group_by(Magic) %>% select(Magic) %>% mutate(IsEnabled = 0) %>% 
+      # write commands to disable systems
+      writeCommandViaCSV(path_T1)
     
-    
+    # disable trades in T3
+    DF_Setup %>% group_by(Magic) %>% 
+      mutate(MagicNumber = Magic + 200, IsEnabled = 0) %>% 
+      group_by(MagicNumber) %>% 
+      select(MagicNumber, IsEnabled) %>% 
+      # write commands to disable systems
+      writeCommandViaCSV(path_T3)
+  
   }
-  # enable systems of T1 in case they were disabled previously
+  
+  ## condition to enable systems
   if(DF_NT[1,1] == 0) {
-    # enable trades
-    if(!class(DFT1)[1]=='try-error'){
-      DFT1 %>%
-        group_by(MagicNumber) %>% select(MagicNumber) %>% mutate(IsEnabled = 1) %>% 
-        # write commands to disable systems
-        writeCommandViaCSV(path_T1)}
-    # in this algorithm SystemControl file must be enabled in case there are no MacroEconomic Event
-    if(!class(DFT3)[1]=='try-error'){
-      DFT3 %>%
-        group_by(MagicNumber) %>% select(MagicNumber) %>% mutate(IsEnabled = 1) %>% 
-        writeCommandViaCSV(path_T3)}
+    # disable trades in T1
+    DF_Setup %>%
+      group_by(Magic) %>% select(Magic) %>% mutate(IsEnabled = 1) %>% 
+      # write commands to disable systems
+      writeCommandViaCSV(path_T1)
+    
+    # disable trades in T3
+    DF_Setup %>% group_by(Magic) %>% 
+      mutate(MagicNumber = Magic + 200, IsEnabled = 1) %>% 
+      group_by(MagicNumber) %>% 
+      select(MagicNumber, IsEnabled) %>% 
+      # write commands to disable systems
+      writeCommandViaCSV(path_T3)
     
   }
   

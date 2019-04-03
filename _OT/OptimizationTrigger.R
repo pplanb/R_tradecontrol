@@ -44,8 +44,8 @@ path_T1 <- "D:/FxPro - Terminal1/MQL4/Files/"
 # NOTE:
 # Robot repository must have a folder with file TEST/Setup.csv
 # File Setup.csv should contain magic numbers of the working systems 
-path_PRJCT_1 <- "D:/TradingRepos/FALCON_A/"
-# path_PRJCT_2 <- "D:/TradingRepos/FALCON_F2/"
+#path_PRJCT_1 <- "D:/TradingRepos/FALCON_A/"
+path_PRJCT_2 <- "D:/TradingRepos/FALCON_F2/"
 # path_PRJCT_3 <- "D:/TradingRepos/FALCON_B/"
 
 # -------------------------
@@ -72,17 +72,17 @@ DFT1 <- try(import_data(path_T1, "OrdersResultsT1.csv"), silent = TRUE)
 
 #
 ### PROJECT 1
-#
-DFT1 %>% check_if_optimize(path_trading_robot = path_PRJCT_1,
-                           num_trades_to_consider = 7,
-                           profit_factor_limit = 1.0)
 # #
-# ### PROJECT 2
-# #
-# DFT1 %>% check_if_optimize(path_trading_robot = path_PRJCT_2,
-#                            num_trades_to_consider = 20,
+# DFT1 %>% check_if_optimize(path_trading_robot = path_PRJCT_1,
+#                            num_trades_to_consider = 7,
 #                            profit_factor_limit = 1.0)
-# ##======================================== end of script
+# # #
+### PROJECT 2
+#
+DFT1 %>% check_if_optimize(path_trading_robot = path_PRJCT_2,
+                           num_trades_to_consider = 20,
+                           profit_factor_limit = 1.0)
+##======================================== end of script
 # 
 # ### PROJECT 3
 # #
