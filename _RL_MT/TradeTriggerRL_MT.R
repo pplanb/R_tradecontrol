@@ -48,6 +48,7 @@ source("D:/TradingRepos/R_tradecontrol/import_data_mt.R")
 source("D:/TradingRepos/R_tradecontrol/_RL_MT/generate_RL_policy.R")
 source("D:/TradingRepos/R_tradecontrol/_RL_MT/record_policy.R")
 source("D:/TradingRepos/R_tradecontrol/writeCommandViaCSV.R")
+source("D:/TradingRepos/R_tradecontrol/evaluate_macroeconomic_event.R")
 
 # -------------------------
 # Define terminals path addresses, from where we are going to read/write data
@@ -59,7 +60,12 @@ path_T1 <- "D:/FxPro - Terminal1/MQL4/Files/"
 path_T3 <- "D:/FxPro - Terminal3/MQL4/Files/"
 
 # path where to read control parameters from
-path_control_files = "D:/TradingRepos/R_tradecontrol/R_tradecontrol/_RL_MT/control"
+path_control_files = "D:/TradingRepos/R_tradecontrol/_RL_MT/control"
+
+# evaluate data on macroeconomic event (required to start trading)
+evaluate_macroeconomic_event(setup_path = "D:/TradingRepos/FALCON_F2/TEST/Setup.csv",
+                             file_name = "01_MacroeconomicEvent.csv",
+                             path_t1 = path_T1,path_t3 = path_T3)
 # -------------------------
 # read data from trades in terminal 1
 # -------------------------
@@ -72,6 +78,9 @@ DFT1 <- try(import_data(path_T1, "OrdersResultsT1.csv"), silent = TRUE)
 # read data from trades in terminal 3
 # -------------------------
 DFT3 <- try(import_data(path_T3, "OrdersResultsT3.csv"), silent = TRUE)
+
+# check if we have no errors importing trading results
+if(!class(DFT1)[1]=="try-error"){
 
 # Vector with unique Trading Systems
 vector_systems <- DFT1 %$% MagicNumber %>% unique() %>% sort()
@@ -88,14 +97,14 @@ for (i in 1:length(vector_systems)) {
   # tryCatch() function will not abort the entire for loop in case of the error in one iteration
   tryCatch({
     # execute this code below for debugging:
-    # i <- 25
+    # i <- 18
     
   # extract current magic number id
   trading_system <- vector_systems[i]
   # get trading summary data only for one system 
   trading_systemDF <- DFT1 %>% filter(MagicNumber == trading_system)
   # try to extract market type information for that system, filter rows where MarketType was not logged!
-  DFT1_MT <- try(import_data_mt(path_T1, trading_system), silent = TRUE) %>% filter(MarketType != -1)
+  DFT1_MT <- try(import_data_mt(path_T1, trading_system), silent = TRUE) %>% filter(MarketType != -1) %>% filter(TicketNumber != -1)
   # go to the next i if there is no data
   if(class(DFT1_MT)[1]=="try-error") { next }
     # joining the data with market type info
@@ -148,54 +157,4 @@ for (i in 1:length(vector_systems)) {
 ### ============== END of FOR EVERY TRADING SYSTEM ###
 
 
-
-
-
-##========================================
-# -------------------------
-# stopping all systems when macroeconomic event is present
-# this will be covered in the Course #5 of the Lazy Trading Series!
-# -------------------------
-if(file.exists(file.path(path_T1, "01_MacroeconomicEvent.csv"))){
-  #read the file containing a flag (1 will mean that event is present hence no new opened orders)
-  DF_NT <- read_csv(file= file.path(path_T1, "01_MacroeconomicEvent.csv"), col_types = "i")
-  #read the table of trading robots in operation
-  DF_Setup <- read_csv("D:/TradingRepos/FALCON_F2/TEST/Setup.csv")
-  
-  ## condition to disable systems
-  if(DF_NT[1,1] == 1) {
-    # disable trades in T1
-    DF_Setup %>%
-      group_by(Magic) %>% select(Magic) %>% mutate(IsEnabled = 0) %>% 
-      # write commands to disable systems
-      writeCommandViaCSV(path_T1)
-    
-    # disable trades in T3
-    DF_Setup %>% group_by(Magic) %>% 
-      mutate(MagicNumber = Magic + 200, IsEnabled = 0) %>% 
-      group_by(MagicNumber) %>% 
-      select(MagicNumber, IsEnabled) %>% 
-      # write commands to disable systems
-      writeCommandViaCSV(path_T3)
-  
-  }
-  
-  ## condition to enable systems
-  if(DF_NT[1,1] == 0) {
-    # disable trades in T1
-    DF_Setup %>%
-      group_by(Magic) %>% select(Magic) %>% mutate(IsEnabled = 1) %>% 
-      # write commands to disable systems
-      writeCommandViaCSV(path_T1)
-    
-    # disable trades in T3
-    DF_Setup %>% group_by(Magic) %>% 
-      mutate(MagicNumber = Magic + 200, IsEnabled = 1) %>% 
-      group_by(MagicNumber) %>% 
-      select(MagicNumber, IsEnabled) %>% 
-      # write commands to disable systems
-      writeCommandViaCSV(path_T3)
-    
-  }
-  
-}
+} # ============== END of condition to check  if(!class(DFT1_MT)[1]=="try-error")
